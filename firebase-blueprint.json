@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "Inventory": {
+      "title": "Inventory Item",
+      "description": "Represents a spare part or repair tool.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["part", "tool"] },
+        "category": { "type": "string", "enum": ["iPhone", "iPad", "iWatch", "MacBook", "General"] },
+        "quantity": { "type": "number" },
+        "price": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "category", "quantity"]
+    },
+    "Repair": {
+      "title": "Repair Job",
+      "description": "Represents a repair job tracking lifecycle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "deviceModel": { "type": "string" },
+        "deviceType": { "type": "string", "enum": ["iPhone", "iPad", "iWatch", "MacBook"] },
+        "status": { "type": "string", "enum": ["pickdrop", "repair", "quotation", "completed", "delivered"] },
+        "quotationAmount": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["trackingId", "customerName", "deviceModel", "deviceType", "status"]
+    }
+  },
+  "firestore": {
+    "/inventory/{itemId}": {
+      "schema": "Inventory",
+      "description": "Storage for spare parts and tools."
+    },
+    "/repairs/{repairId}": {
+      "schema": "Repair",
+      "description": "Tracking for repair jobs."
+    }
+  }
+}

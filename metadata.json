@@ -1,0 +1,6 @@
+{
+  "name": "iFixPune Pro",
+  "description": "Premium Apple device repair management system for the Pune branch, tracking repairs, inventory, and business expansion plans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

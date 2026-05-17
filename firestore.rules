@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidRepair(data) {
+      return data.trackingId is string && data.trackingId.size() <= 32 &&
+             data.customerName is string && data.customerName.size() <= 100 &&
+             data.customerPhone is string && data.customerPhone.size() <= 20 &&
+             data.deviceModel is string && data.deviceModel.size() <= 50 &&
+             data.status in ['pickdrop', 'repair', 'quotation', 'completed', 'delivered'] &&
+             (data.get('quotationAmount', 0) is number) &&
+             data.description is string && data.description.size() <= 5000;
+    }
+
+    function isValidInventory(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.type in ['part', 'tool'] &&
+             data.category in ['iPhone', 'iPad', 'iWatch', 'MacBook', 'General'] &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.price is number && data.price >= 0;
+    }
+
+    // Repairs Collection
+    match /repairs/{repairId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && 
+                      isValidId(repairId) && 
+                      isValidRepair(incoming()) && 
+                      incoming().createdAt == request.time &&
+                      incoming().updatedAt == request.time;
+      
+      allow update: if isSignedIn() && 
+                      isValidRepair(incoming()) && 
+                      incoming().updatedAt == request.time &&
+                      incoming().createdAt == existing().createdAt &&
+                      incoming().trackingId == existing().trackingId && (
+                        // Staff can update specific fields
+                        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'quotationAmount', 'description', 'updatedAt'])
+                      );
+      
+      allow delete: if isSignedIn(); // Basic staff access for now
+    }
+
+    // Inventory Collection
+    match /inventory/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && 
+                      isValidId(itemId) && 
+                      isValidInventory(incoming()) && 
+                      incoming().updatedAt == request.time;
+      
+      allow update: if isSignedIn() && 
+                      isValidInventory(incoming()) && 
+                      incoming().updatedAt == request.time && (
+                        incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'price', 'updatedAt', 'name', 'type', 'category'])
+                      );
+      
+      allow delete: if isSignedIn();
+    }
+  }
+}
